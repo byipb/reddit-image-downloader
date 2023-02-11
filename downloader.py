@@ -1,20 +1,27 @@
 import praw
+from prawcore import exceptions
 import config
 import requests
 
 # Setup login
 reddit = praw.Reddit(
-    client_id="config.client_id",
-    client_secret="config.client_secret",
-    password="config.password",
-    username="config.username",
+    client_id=config.client_id,
+    client_secret=config.client_secret,
+    password=config.password,
+    username=config.username,
     user_agent="Image Downloader for r/EarthPorn v1.0 by byipb"
 )
-
-sub_name = "EarthPorn"
+try:
+    sub_name = input("Enter subreddit: ")
+    sub_exists_list = reddit.subreddits.search_by_name(sub_name, include_nsfw=True, exact=True)
+except exceptions.NotFound:
+    print("Subreddit: r/"+sub_name+" does not exist.")
+       
+       
+sub_url = "https://www.reddit.com/r/"+sub_name+"/.json"
 
 # Request for JSON of page URL
-resp = requests.get("https://www.reddit.com/r/earthporn/.json", headers = {'User-agent': 'byipb imgdl v1.0'}).json()
+resp = requests.get(sub_url, headers = {'User-agent': 'byipb imgdl v1.0'}).json()
 
 # Parse JSON
 # 1. get proper URLs from response
@@ -25,7 +32,7 @@ resp = requests.get("https://www.reddit.com/r/earthporn/.json", headers = {'User
 # ['data']['children'][0]['data']['preview']['images'][0]['source']['url']
 
 # children is a list
-# data is a dict | note: there are 2 different 'data' references, this is the inner one
+# data is a dict | note: there are 2 different 'data' references, this is the second
 # preview is a dict
 # images is a list
 
@@ -40,12 +47,13 @@ for data in request:
 			
 			# Get image from URL and write to file
 			img_data = requests.get(clean_url, stream=True)
-			with open('image%s.jpg' % img_count, 'wb') as out_file:
+			with open('./images/image%s.jpg' % img_count, 'wb') as out_file:
 				out_file.write(img_data.content)
 			print(clean_url)
 	img_count+= 1
 	
 # possible future ideas:
-# - add user input for sub_name 
+# - add user input for sub_name [DONE]
 # - add checks for images on first page of subreddit
 # - add check for existing filename
+# - put result images in a separate folder [DONE]
