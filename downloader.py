@@ -2,6 +2,8 @@ import praw
 from prawcore import exceptions
 import config
 import requests
+import os.path
+from os import path
 
 # Setup login
 reddit = praw.Reddit(
@@ -38,13 +40,28 @@ resp = requests.get(sub_url, headers = {'User-agent': 'byipb imgdl v1.0'}).json(
 
 request = resp['data']['children']
 img_count = 0
+overwrite = ''
 
 for data in request:
 	if 'preview' in data['data']:
 		for images in data['data']['preview']['images']:
 			init_url = images['source']['url']
 			clean_url = init_url.replace('amp;','')
-			
+						
+			if (path.isfile('./images/image%s.jpg' % img_count) and overwrite != 'y'):
+
+				# Skip if filename already exists and user chose to not overwrite previously
+				if (overwrite=='n'):
+					continue
+
+				overwrite = input('A file named '+'image%s.jpg ' % img_count+'already exists, do you wish to overwrite all files with existing filenames? [y/n] \n')
+				if (overwrite=='y'):
+					pass
+				elif (overwrite=='n'):
+					continue
+			else:
+				continue
+					
 			# Get image from URL and write to file
 			img_data = requests.get(clean_url, stream=True)
 			with open('./images/image%s.jpg' % img_count, 'wb') as out_file:
@@ -55,5 +72,5 @@ for data in request:
 # possible future ideas:
 # - add user input for sub_name [DONE]
 # - add checks for images on first page of subreddit
-# - add check for existing filename
+# - add check for existing filename [DONE]
 # - put result images in a separate folder [DONE]
